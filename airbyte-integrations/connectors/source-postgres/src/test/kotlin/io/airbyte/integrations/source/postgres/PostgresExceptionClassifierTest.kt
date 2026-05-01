@@ -26,9 +26,7 @@ class PostgresExceptionClassifierTest {
         assertTrue(result is TransientError)
         val transient = result as TransientError
         assertTrue(
-            transient.displayMessage.contains(
-                "Database connection timed out during socket connect"
-            )
+            transient.displayMessage.contains("Database connection timed out during socket connect")
         )
     }
 
@@ -40,9 +38,7 @@ class PostgresExceptionClassifierTest {
         assertTrue(result is TransientError)
         val transient = result as TransientError
         assertTrue(
-            transient.displayMessage.contains(
-                "Database connection timed out during socket connect"
-            )
+            transient.displayMessage.contains("Database connection timed out during socket connect")
         )
     }
 
@@ -59,9 +55,7 @@ class PostgresExceptionClassifierTest {
     @Test
     fun testPSQLExceptionConnectionAttemptFailed() {
         val exception =
-            RuntimeException(
-                "org.postgresql.util.PSQLException: The connection attempt failed."
-            )
+            RuntimeException("org.postgresql.util.PSQLException: The connection attempt failed.")
         val result = classifier.classify(exception)
         assertNotNull(result)
         assertTrue(result is TransientError)
@@ -83,9 +77,7 @@ class PostgresExceptionClassifierTest {
     @Test
     fun testExistingMsecTimeoutStillWorks() {
         val exception =
-            RuntimeException(
-                "java.util.concurrent.TimeoutException: Timed out after 15000 msec"
-            )
+            RuntimeException("java.util.concurrent.TimeoutException: Timed out after 15000 msec")
         val result = classifier.classify(exception)
         assertNotNull(result)
         assertTrue(result is TransientError)
