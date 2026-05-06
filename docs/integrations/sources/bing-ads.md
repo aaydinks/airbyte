@@ -334,7 +334,7 @@ Increasing **Lookback window** only protects data going forward, within the new 
 
 | Version     | Date       | Pull Request                                                                                                                     | Subject                                                                                                                                                                |
 |:------------|:-----------|:---------------------------------------------------------------------------------------------------------------------------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| 2.23.17 | 2026-05-06 | [PR_NUMBER_PLACEHOLDER](https://github.com/airbytehq/airbyte/pull/PR_NUMBER_PLACEHOLDER) | Document performance-report data-finalization limitation and clarify `lookback_window` guidance |
+| 2.23.17 | 2026-05-06 | [77791](https://github.com/airbytehq/airbyte/pull/77791) | Document performance-report data-finalization limitation and clarify `lookback_window` guidance |
 | 2.23.16 | 2026-04-21 | [76515](https://github.com/airbytehq/airbyte/pull/76515) | Update dependencies |
 | 2.23.15 | 2026-04-08 | [76165](https://github.com/airbytehq/airbyte/pull/76165) | Promote 2.23.15-rc.3 to GA — fixes SAS token expiry during report downloads |
 | 2.23.15-rc.3 | 2026-04-02 | [76053](https://github.com/airbytehq/airbyte/pull/76053) | Fix SAS token expiry during report downloads by re-polling for fresh URL before each download |
