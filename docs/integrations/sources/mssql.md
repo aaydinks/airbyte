@@ -33,28 +33,28 @@ for more details.
 
 ## Getting Started
 
-#### Requirements
+### Requirements
 
 1. MSSQL Server `Azure SQL Database`, `Azure Synapse Analytics`, `Azure SQL Managed Instance`,
    `SQL Server 2022`, `SQL Server 2019`, `SQL Server 2017`, `SQL Server 2016`, `SQL Server 2014`, `SQL Server 2012`,
    `PDW 2008R2 AU34`.
-2. Create a dedicated read-only Airbyte user with access to all tables needed for replication
-3. If you want to use CDC, please see [the relevant section below](mssql.md#change-data-capture-cdc)
-   for further setup requirements
+2. Create a dedicated read-only Airbyte user with access to all tables needed for replication.
+3. If you want to use CDC, see [the relevant section below](mssql.md#change-data-capture-cdc)
+   for further setup requirements.
 
-#### 1. Make sure your database is accessible from the machine running Airbyte
+### 1. Make sure your database is accessible from the machine running Airbyte
 
 This is dependent on your networking setup. The easiest way to verify if Airbyte is able to connect
 to your MSSQL instance is via the check connection tool in the UI.
 
-#### 2. Create a dedicated read-only user with access to the relevant tables \(Recommended but optional\)
+### 2. Create a dedicated read-only user with access to the relevant tables (recommended but optional)
 
 This step is optional but highly recommended to allow for better permission control and auditing.
 Alternatively, you can use Airbyte with an existing user in your database.
 
-#### 3. Your database user should now be ready for use with Airbyte!
+### 3. Your database user should now be ready for use with Airbyte
 
-#### Airbyte Cloud
+### Airbyte Cloud
 
 On Airbyte Cloud, only secured connections to your MSSQL instance are supported in source
 configuration. You may either configure your connection using one of the supported SSL Methods or by
@@ -109,9 +109,9 @@ approaches CDC.
   your table in the destination, consider using non-CDC incremental and occasionally reset the data
   and re-sync.
 - If your table has a primary key but doesn't have a reasonable cursor field for incremental syncing
-  \(i.e. `updated_at`\), CDC allows you to sync your table incrementally.
+  (such as `updated_at`), CDC allows you to sync your table incrementally.
 
-#### CDC Limitations
+### CDC Limitations
 
 - Make sure to read our [CDC docs](../../platform/understanding-airbyte/cdc) to see limitations that
   impact all databases using CDC replication.
@@ -168,7 +168,7 @@ MS SQL Server provides some built-in stored procedures to enable CDC.
 
   - \[1\] Specifies a role which will gain `SELECT` permission on the captured columns of the source
     table. We suggest putting a value here so you can use this role in the next step but you can
-    also set the value of @role*name to `NULL` to allow only \_sysadmin* and _db_owner_ to have
+    also set the value of `@role_name` to `NULL` to allow only _sysadmin_ and _db_owner_ to have
     access. Be sure that the credentials used to connect to the source in Airbyte align with this
     role so that Airbyte can access the cdc tables.
   - \[2\] Specifies the filegroup where SQL Server places the change table. We recommend creating a
@@ -296,62 +296,32 @@ GO
 
 ## Connection to MSSQL via an SSH Tunnel
 
-Airbyte has the ability to connect to a MSSQL instance via an SSH Tunnel. The reason you might want
-to do this because it is not possible \(or against security policy\) to connect to the database
-directly \(e.g. it does not have a public IP address\).
+Airbyte can connect to a MSSQL instance through an SSH tunnel. Use this option when Airbyte can't
+connect to the database directly, for example, because the database doesn't have a public IP address
+or your security policy requires access through a bastion host.
 
-When using an SSH tunnel, you are configuring Airbyte to connect to an intermediate server \(a.k.a.
-a bastion server\) that _does_ have direct access to the database. Airbyte connects to the bastion
-and then asks the bastion to connect directly to the server.
+When you use an SSH tunnel, Airbyte connects to an intermediate server, also known as a bastion or
+jump server, that has direct access to the database. The bastion connects to the database on
+Airbyte's behalf.
 
-Using this feature requires additional configuration, when creating the source. We will talk through
-what each piece of configuration means.
+To configure an SSH tunnel:
 
-1. Configure all fields for the source as you normally would, except `SSH Tunnel Method`.
-2. `SSH Tunnel Method` defaults to `No Tunnel` \(meaning a direct connection\). If you want to use
-   an
-
-   SSH Tunnel choose `SSH Key Authentication` or `Password Authentication`.
-
-   1. Choose `Key Authentication` if you will be using an RSA private key as your secret for
-
-      establishing the SSH Tunnel \(see below for more information on generating this key\).
-
-   2. Choose `Password Authentication` if you will be using a password as your secret for
-      establishing
-
-      the SSH Tunnel.
-
-3. `SSH Tunnel Jump Server Host` refers to the intermediate \(bastion\) server that Airbyte will
-   connect to. This should
-
-   be a hostname or an IP Address.
-
-4. `SSH Connection Port` is the port on the bastion server with which to make the SSH connection.
-   The default port for
-
-   SSH connections is `22`, so unless you have explicitly changed something, go with the default.
-
-5. `SSH Login Username` is the username that Airbyte should use when connecting to the bastion
-   server. This is NOT the
-
-   MSSQL username.
-
-6. If you are using `Password Authentication`, then `SSH Login Username` should be set to the
-
-   password of the User from the previous step. If you are using `SSH Key Authentication` leave this
-
-   blank. Again, this is not the MSSQL password, but the password for the OS-user that Airbyte is
-
-   using to perform commands on the bastion.
-
-7. If you are using `SSH Key Authentication`, then `SSH Private Key` should be set to the RSA
-
-   private Key that you are using to create the SSH connection. This should be the full contents of
-
-   the key file starting with `-----BEGIN RSA PRIVATE KEY-----` and ending
-
-   with `-----END RSA PRIVATE KEY-----`.
+1. Configure all fields for the source as you normally would, except **SSH Tunnel Method**.
+2. For **SSH Tunnel Method**, select one of the following options:
+   - **No Tunnel** for a direct connection to the database. This is the default.
+   - **SSH Key Authentication** to use an RSA private key as your secret for establishing the SSH
+     tunnel. See [Generating an SSH Key Pair](#generating-an-ssh-key-pair).
+   - **Password Authentication** to use a password as your secret for establishing the SSH tunnel.
+3. For **SSH Tunnel Jump Server Host**, enter the hostname or IP address of the bastion server.
+4. For **SSH Connection Port**, enter the port on the bastion server that accepts SSH connections.
+   The default SSH port is `22`.
+5. For **SSH Login Username**, enter the OS-level username that Airbyte uses to connect to the
+   bastion server. This is not the MSSQL username.
+6. If you selected **Password Authentication**, set **SSH Login Password** to the OS-level password
+   for the bastion user from the previous step. This is not the MSSQL password.
+7. If you selected **SSH Key Authentication**, set **SSH Private Key** to the RSA private key used
+   to establish the SSH connection. Provide the full contents of the key file, starting with
+   `-----BEGIN RSA PRIVATE KEY-----` and ending with `-----END RSA PRIVATE KEY-----`.
 
 ### Generating an SSH Key Pair
 
@@ -369,10 +339,9 @@ to the Airbyte connector configuration screen, so it may log in to the bastion.
 ## Data type mapping
 
 MSSQL data types are mapped to the following data types when synchronizing data. You can check the
-test values examples
-[here](https://github.com/airbytehq/airbyte/blob/master/airbyte-integrations/connectors/source-mssql/src/test/kotlin/io/airbyte/integrations/source/mssql/MsSqlServerDatatypeIntegrationTest.kt).
-If you can't find the data type you are looking for or have any problems feel free to add a new
-test!
+[data type mapping test values](https://github.com/airbytehq/airbyte/blob/master/airbyte-integrations/connectors/source-mssql/src/test/kotlin/io/airbyte/integrations/source/mssql/MsSqlServerDatatypeIntegrationTest.kt).
+If you can't find the data type you are looking for or have any problems, feel free to add a new
+test.
 
 | MSSQL Type                                              | Resulting Type          | Notes |
 | :------------------------------------------------------ | :---------------------- | :---- |
@@ -429,13 +398,13 @@ and 0.4.18. As part of that spec change `replication_method` configuration param
 In Microsoft SQL source connector versions 0.4.17 and older, `replication_method` configuration
 parameter was saved in the configuration database as follows:
 
-```
+```json
 "replication_method": "STANDARD"
 ```
 
 Starting with version 0.4.18, `replication_method` configuration parameter is saved as follows:
 
-```
+```json
 "replication_method": {
     "method": "STANDARD"
 }
@@ -471,13 +440,13 @@ WHERE actor_definition_id ='b5ea17b1-f170-46dc-bc31-cc744ca984c1' AND (configura
 |:------------|:-----------|:------------------------------------------------------------------------------------------------------------------|:------------------------------------------------------------------------------------------------------------------------------------------------|
 | 4.4.7       | 2026-05-12 | [78033](https://github.com/airbytehq/airbyte/pull/78033)                                                          | Re-release the Java connector base image revert after the 4.4.6 publish failure.                                                               |
 | 4.4.6       | 2026-05-07 | [77856](https://github.com/airbytehq/airbyte/pull/77856)                                                          | Revert the Java connector base image to resolve connection issues and remove registry rollback overrides.                                       |
-| 4.4.5       | 2026-05-07 | [77843](https://github.com/airbytehq/airbyte/pull/77843)                                                          | Roll back source mssql to 4.4.3 to investigate a potential connection issue.                                                                    |
-| 4.4.4       | 2026-05-01 | [77665](https://github.com/airbytehq/airbyte/pull/77665)                                                          | Fix sampling sync failure on empty tables in Full Refresh mode (NULL upper bound).                                                              |
+| 4.4.5       | 2026-05-07 | [77843](https://github.com/airbytehq/airbyte/pull/77843)                                                          | Roll back source-mssql to 4.4.3 in Cloud and OSS to investigate a potential connection issue introduced in 4.4.4.                               |
+| 4.4.4       | 2026-05-06 | [77665](https://github.com/airbytehq/airbyte/pull/77665)                                                          | Fix sampling sync failure on empty tables in Full Refresh mode (NULL upper bound).                                                              |
 | 4.4.3       | 2026-05-05 | [77786](https://github.com/airbytehq/airbyte/pull/77786)                                                          | Make the hidden additional properties fields in spec optional. No functional change.                                                            |
-| 4.4.2       | 2026-04-27 | [77036](https://github.com/airbytehq/airbyte/pull/77036)                                                          | Fix `TABLESAMPLE` failure on views and tables without an ordered column in cursor-incremental syncs.                                            |
+| 4.4.2       | 2026-04-29 | [77036](https://github.com/airbytehq/airbyte/pull/77036)                                                          | Fix `TABLESAMPLE` failure on views and tables without an ordered column in cursor-incremental syncs.                                            |
 | 4.4.1       | 2026-04-23 | [76857](https://github.com/airbytehq/airbyte/pull/76857)                                                          | Fix `Invalid column name` error when sampling system-versioned temporal tables that have `HIDDEN` period columns.                               |
 | 4.4.0       | 2026-04-23 | [76143](https://github.com/airbytehq/airbyte/pull/76143)                                                          | Add Microsoft Entra ID service principal authentication for both JDBC and CDC paths.                                                            |
-| 4.3.6       | 2026-04-02 | [74729](https://github.com/airbytehq/airbyte/pull/74729)                                                          | Fix snapshot partitions restarting from the beginning of the table instead of resuming from the last checkpoint.                                |
+| 4.3.6       | 2026-04-20 | [74729](https://github.com/airbytehq/airbyte/pull/74729)                                                          | Fix snapshot partitions restarting from the beginning of the table instead of resuming from the last checkpoint.                                |
 | 4.3.5       | 2026-02-23 | [73606](https://github.com/airbytehq/airbyte/pull/73606)                                                          | Fix CDC cursor overflow.                                                                                                                        |
 | 4.3.4       | 2026-02-17 | [72935](https://github.com/airbytehq/airbyte/pull/72935)                                                          | Update LSN validation to correctly detect when saved offset has been truncated.                                                                 |
 | 4.3.3       | 2026-02-03 | [71821](https://github.com/airbytehq/airbyte/pull/71821)                                                          | Require a manual refresh when schema history is missing, bump CDK version.                                                                      |
@@ -626,7 +595,7 @@ WHERE actor_definition_id ='b5ea17b1-f170-46dc-bc31-cc744ca984c1' AND (configura
 | 0.4.23      | 2022-10-21 | [18263](https://github.com/airbytehq/airbyte/pull/18263)                                                          | Fixes bug introduced in [15833](https://github.com/airbytehq/airbyte/pull/15833) and adds better error messaging for SSH tunnel in Destinations |
 | 0.4.22      | 2022-10-19 | [18087](https://github.com/airbytehq/airbyte/pull/18087)                                                          | Better error messaging for configuration errors (SSH configs, choosing an invalid cursor)                                                       |
 | 0.4.21      | 2022-10-17 | [18041](https://github.com/airbytehq/airbyte/pull/18041)                                                          | Fixes bug introduced 2022-09-12 with SshTunnel, handles iterator exception properly                                                             |
-|             | 2022-10-13 | [15535](https://github.com/airbytehq/airbyte/pull/16238)                                                          | Update incremental query to avoid data missing when new data is inserted at the same time as a sync starts under non-CDC incremental mode       |
+|             | 2022-10-14 | [15535](https://github.com/airbytehq/airbyte/pull/15535)                                                          | Update incremental query to avoid data missing when new data is inserted at the same time as a sync starts under non-CDC incremental mode       |
 | 0.4.20      | 2022-09-14 | [15668](https://github.com/airbytehq/airbyte/pull/15668)                                                          | Wrap logs in AirbyteLogMessage                                                                                                                  |
 | 0.4.19      | 2022-09-05 | [16002](https://github.com/airbytehq/airbyte/pull/16002)                                                          | Added ability to specify schemas for discovery during setting connector up                                                                      |
 | 0.4.18      | 2022-09-03 | [14910](https://github.com/airbytehq/airbyte/pull/14910)                                                          | Standardize spec for CDC replication. Replace the `replication_method` enum with a config object with a `method` enum field.                    |
