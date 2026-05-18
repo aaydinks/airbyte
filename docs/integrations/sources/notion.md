@@ -27,17 +27,16 @@ We have provided a quick setup guide for creating an integration in Notion below
 ### Step 1: Create an integration in Notion and set capabilities
 
 1. Log in to your Notion workspace and navigate to the [My integrations](https://www.notion.so/my-integrations) page. Select **New integration**.
-
-:::note
-You must be the owner of the Notion workspace to create a new integration associated with it.
-:::
-
 2. Enter a **Name** for your integration. Make sure you have selected the correct workspace from the **Associated workspace** dropdown menu, and click **Submit**.
 3. In the navbar, select [**Capabilities**](https://developers.notion.com/reference/capabilities). Check the following capabilities based on your use case:
 
 - [**Read content**](https://developers.notion.com/reference/capabilities#content-capabilities): required for all connections.
 - [**Read comments**](https://developers.notion.com/reference/capabilities#comment-capabilities): required if you want to sync the Comments stream.
 - [**Read user information**](https://developers.notion.com/reference/capabilities#user-capabilities) (with or without emails): required if you want to sync the Users stream.
+
+:::note
+You must be the owner of the Notion workspace to create a new integration associated with it.
+:::
 
 ### Step 2: Share pages and acquire authorization credentials
 
@@ -66,7 +65,9 @@ If you are authenticating via OAuth2.0 for **Airbyte Open Source**, you will nee
 2. In the left navigation bar, click **Sources**. In the top-right corner, click **New source**.
 3. Find and select **Notion** from the list of available sources.
 4. Enter a **Source name** of your choosing.
-5. Choose the method of authentication from the dropdown menu:
+5. Choose the method of authentication from the dropdown menu.
+6. (Optional) Provide a **Start Date** using the datepicker, or enter a UTC date and time programmatically in the format `YYYY-MM-DDTHH:MM:SS.000Z`. During incremental syncs, records generated before this date aren't replicated. If left blank, the start date defaults to two years before the current date.
+7. Click **Set up source** and wait for the tests to complete.
 
 <!-- env:cloud -->
 
@@ -83,9 +84,6 @@ If you are authenticating via OAuth2.0 for **Airbyte Open Source**, you will nee
 - **Access Token**: Copy and paste the Access Token found in the **Secrets** tab of your private integration's page.
 - **OAuth2.0**: Copy and paste the Client ID, Client Secret and Access Token you acquired after setting up your public integration.
 <!-- /env:oss -->
-
-6. (Optional) Provide a **Start Date** using the datepicker, or enter a UTC date and time programmatically in the format `YYYY-MM-DDTHH:MM:SS.000Z`. During incremental syncs, records generated before this date aren't replicated. If left blank, the start date defaults to two years before the current date.
-7. Click **Set up source** and wait for the tests to complete.
 
 ## Supported sync modes
 
