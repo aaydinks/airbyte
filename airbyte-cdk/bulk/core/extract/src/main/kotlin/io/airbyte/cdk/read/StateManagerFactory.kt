@@ -268,8 +268,8 @@ class StateManagerFactory(
                 return null
             }
             val cursorColumnID: String = cursorColumnIDComponents.joinToString(separator = ".")
-            metaFieldDecorator.globalMetaFields.firstOrNull { it.id == cursorColumnID }?.let {
-                return it
+            if (cursorColumnID == metaFieldDecorator.globalCursor?.id) {
+                return metaFieldDecorator.globalCursor
             }
             return dataColumnOrNull(cursorColumnID)
         }

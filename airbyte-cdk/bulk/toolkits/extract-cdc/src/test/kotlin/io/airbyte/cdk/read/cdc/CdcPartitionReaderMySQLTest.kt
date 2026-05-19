@@ -102,14 +102,12 @@ class CdcPartitionReaderMySQLTest :
 
         override fun generateColdStartProperties(streams: List<Stream>): Map<String, String> =
             DebeziumPropertiesBuilder()
-                .with(commonProperties())
+                .with(generateWarmStartProperties(emptyList()))
                 .with("snapshot.mode", "recovery")
+                .withStreams(listOf())
                 .buildMap()
 
         override fun generateWarmStartProperties(streams: List<Stream>): Map<String, String> =
-            DebeziumPropertiesBuilder().with(commonProperties()).withStreams(streams).buildMap()
-
-        private fun commonProperties(): Map<String, String> =
             DebeziumPropertiesBuilder()
                 .withDefault()
                 .withConnector(MySqlConnector::class.java)
@@ -127,6 +125,7 @@ class CdcPartitionReaderMySQLTest :
                 .withOffset()
                 .withSchemaHistory()
                 .with("snapshot.mode", "when_needed")
+                .withStreams(streams)
                 .buildMap()
 
         private fun currentPosition(): Position =

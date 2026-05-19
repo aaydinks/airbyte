@@ -725,38 +725,36 @@ class MsSqlServerDebeziumOperations(
 
     private fun discoverCdcEnabledTables(): List<MsSqlServerCdcTable> {
         jdbcConnectionFactory.get().use { connection ->
-            connection
-                .createStatement()
-                .use { statement ->
-                    statement
-                        .executeQuery(
-                            """
+            connection.createStatement().use { statement ->
+                statement
+                    .executeQuery(
+                        """
                             SELECT s.name AS schema_name, t.name AS table_name
                             FROM cdc.change_tables ct
                             JOIN sys.tables t ON ct.source_object_id = t.object_id
                             JOIN sys.schemas s ON t.schema_id = s.schema_id
                             ORDER BY s.name, t.name
                             """.trimIndent()
-                        )
-                        .use { resultSet ->
-                            return buildList {
-                                while (resultSet.next()) {
-                                    val schema = resultSet.getString("schema_name")
-                                    if (
-                                        configuration.namespaces.isEmpty() ||
-                                            configuration.namespaces.contains(schema)
-                                    ) {
-                                        add(
-                                            MsSqlServerCdcTable(
-                                                schema = schema,
-                                                table = resultSet.getString("table_name"),
-                                            )
+                    )
+                    .use { resultSet ->
+                        return buildList {
+                            while (resultSet.next()) {
+                                val schema = resultSet.getString("schema_name")
+                                if (
+                                    configuration.namespaces.isEmpty() ||
+                                        configuration.namespaces.contains(schema)
+                                ) {
+                                    add(
+                                        MsSqlServerCdcTable(
+                                            schema = schema,
+                                            table = resultSet.getString("table_name"),
                                         )
-                                    }
+                                    )
                                 }
                             }
                         }
-                }
+                    }
+            }
         }
     }
 
