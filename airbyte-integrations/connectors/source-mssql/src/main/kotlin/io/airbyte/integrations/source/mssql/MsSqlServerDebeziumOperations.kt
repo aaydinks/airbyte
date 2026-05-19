@@ -84,6 +84,7 @@ class MsSqlServerDebeziumOperations(
     val cdcCursorGenerator = AtomicLong(Instant.now().epochSecond * 100_000_000 + 1)
 
     private val log = KotlinLogging.logger {}
+    private var shouldRecoverSchemaHistory = false
 
     @Suppress("UNCHECKED_CAST")
     override fun deserializeRecord(
@@ -262,6 +263,7 @@ class MsSqlServerDebeziumOperations(
     }
 
     override fun deserializeState(opaqueStateValue: JsonNode): DebeziumWarmStartState {
+        shouldRecoverSchemaHistory = false
         val stateNode = opaqueStateValue[MSSQL_STATE]
         val offsetNode = stateNode[MSSQL_CDC_OFFSET] as JsonNode
         val offsetMap: Map<JsonNode, JsonNode> =
@@ -365,13 +367,16 @@ class MsSqlServerDebeziumOperations(
                         .map { HistoryRecord(DocumentReader.defaultReader().read(it)) }
                 DebeziumSchemaHistory(schemaHistoryList)
             }
-        // If the schema history is empty or null, we want to abort the sync
-        // and run a recovery snapshot.
         if (schemaHistory == null || schemaHistory.wrapped.isEmpty()) {
-            return AbortDebeziumWarmStartState(
-                "Schema history missing with existing offset. " +
-                    "Previous snapshot was incomplete, please refresh the connection."
-            )
+            shouldRecoverSchemaHistory = true
+            lastLoadedOffset = offset
+            return ValidDebeziumWarmStartState(offset, null)
+        }
+
+        if (schemaHistoryMissingCdcTables(schemaHistory)) {
+            shouldRecoverSchemaHistory = true
+            lastLoadedOffset = offset
+            return ValidDebeziumWarmStartState(offset, null)
         }
 
         // Store the loaded offset for heartbeat sanitization comparison
@@ -623,7 +628,22 @@ class MsSqlServerDebeziumOperations(
     }
 
     override fun generateWarmStartProperties(streams: List<Stream>): Map<String, String> {
+        if (shouldRecoverSchemaHistory) {
+            return generateColdStartProperties(streams)
+        }
         return generateCommonDebeziumProperties(streams) + ("snapshot.mode" to "when_needed")
+    }
+
+    private fun schemaHistoryMissingCdcTables(schemaHistory: DebeziumSchemaHistory): Boolean {
+        val schemaHistoryText =
+            schemaHistory.wrapped.joinToString(separator = "\n") {
+                DocumentWriter.defaultWriter().write(it.document())
+            }
+        return discoverCdcEnabledTables().any { table ->
+            val tableId =
+                "\\\"${configuration.databaseName}\\\".\\\"${table.schema}\\\".\\\"${table.table}\\\""
+            !schemaHistoryText.contains(tableId)
+        }
     }
 
     private fun generateCommonDebeziumProperties(streams: List<Stream>): Map<String, String> {
