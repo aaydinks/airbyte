@@ -52,6 +52,7 @@ import java.time.Instant
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
 import java.util.concurrent.atomic.AtomicLong
+import java.util.regex.Pattern
 import java.util.zip.GZIPInputStream
 import java.util.zip.GZIPOutputStream
 import kotlin.collections.plus
@@ -63,6 +64,11 @@ data class MsSqlServerCdcPosition(val lsn: String) : PartiallyOrdered<MsSqlServe
         return lsn.compareTo(other.lsn)
     }
 }
+
+private data class MsSqlServerCdcTable(
+    val schema: String,
+    val table: String,
+)
 
 @Singleton
 class MsSqlServerDebeziumOperations(
@@ -599,7 +605,21 @@ class MsSqlServerDebeziumOperations(
     }
 
     override fun generateColdStartProperties(streams: List<Stream>): Map<String, String> {
-        return generateCommonDebeziumProperties(streams) + ("snapshot.mode" to "recovery")
+        val properties = generateCommonDebeziumProperties(streams).toMutableMap()
+        val cdcTables = discoverCdcEnabledTables()
+        if (cdcTables.isNotEmpty()) {
+            properties["schema.include.list"] =
+                DebeziumPropertiesBuilder.joinIncludeList(
+                    cdcTables.map { Pattern.quote(it.schema) }.distinct()
+                )
+            properties["table.include.list"] =
+                DebeziumPropertiesBuilder.joinIncludeList(
+                    cdcTables.map { Pattern.quote("${it.schema}.${it.table}") }
+                )
+            properties.remove("column.include.list")
+        }
+        properties["snapshot.mode"] = "recovery"
+        return properties
     }
 
     override fun generateWarmStartProperties(streams: List<Stream>): Map<String, String> {
@@ -665,6 +685,7 @@ class MsSqlServerDebeziumOperations(
             .withHeartbeats(configuration.debeziumHeartbeatInterval)
             .withOffset()
             .withSchemaHistory()
+            .with("schema.history.internal.store.only.captured.tables.ddl", "true")
             .withStreams(streams)
             .with("include.schema.changes", "false")
             .with("provide.transaction.metadata", "false")
@@ -700,6 +721,43 @@ class MsSqlServerDebeziumOperations(
                     .toString()
             )
             .buildMap()
+    }
+
+    private fun discoverCdcEnabledTables(): List<MsSqlServerCdcTable> {
+        jdbcConnectionFactory.get().use { connection ->
+            connection
+                .createStatement()
+                .use { statement ->
+                    statement
+                        .executeQuery(
+                            """
+                            SELECT s.name AS schema_name, t.name AS table_name
+                            FROM cdc.change_tables ct
+                            JOIN sys.tables t ON ct.source_object_id = t.object_id
+                            JOIN sys.schemas s ON t.schema_id = s.schema_id
+                            ORDER BY s.name, t.name
+                            """.trimIndent()
+                        )
+                        .use { resultSet ->
+                            return buildList {
+                                while (resultSet.next()) {
+                                    val schema = resultSet.getString("schema_name")
+                                    if (
+                                        configuration.namespaces.isEmpty() ||
+                                            configuration.namespaces.contains(schema)
+                                    ) {
+                                        add(
+                                            MsSqlServerCdcTable(
+                                                schema = schema,
+                                                table = resultSet.getString("table_name"),
+                                            )
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                }
+        }
     }
 
     override fun findStreamName(key: DebeziumRecordKey, value: DebeziumRecordValue): String? {
