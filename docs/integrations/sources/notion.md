@@ -66,7 +66,7 @@ If you are authenticating via OAuth2.0 for **Airbyte Open Source**, you will nee
 3. Find and select **Notion** from the list of available sources.
 4. Enter a **Source name** of your choosing.
 5. Choose the method of authentication from the dropdown menu.
-6. (Optional) Provide a **Start Date** using the datepicker, or enter a UTC date and time programmatically in the format `YYYY-MM-DDTHH:MM:SS.000Z`. During incremental syncs, records generated before this date aren't replicated. If left blank, the start date defaults to two years before the current date.
+6. (Optional) Provide a **Start Date** using the date picker, or enter a UTC date and time programmatically in the format `YYYY-MM-DDTHH:MM:SS.000Z`. During incremental syncs, records generated before this date aren't replicated. If left blank, the start date defaults to two years before the current date.
 7. Click **Set up source** and wait for the tests to complete.
 
 <!-- env:cloud -->
