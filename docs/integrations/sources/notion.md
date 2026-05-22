@@ -127,6 +127,7 @@ For programmatic configuration, use these parameter names:
 | `credentials.client_secret` | Required for OAuth 2.0 authentication | Client secret of your public Notion integration. |
 | `credentials.access_token` | Required for OAuth 2.0 authentication | Access token returned by the Notion OAuth flow. |
 | `start_date` | No | UTC date and time in `YYYY-MM-DDTHH:MM:SS.000Z` format. Records before this date aren't replicated for streams that support incremental sync. If unset, defaults to two years before the first sync. |
+| `num_workers` | No | Number of concurrent worker threads to use during a sync. Valid values are `1` through `10`. Defaults to `5`. Higher values can speed up large syncs, but may increase rate-limit pressure against Notion's limit of approximately three requests per second per integration. |
 
 ## Changelog
 
@@ -135,7 +136,7 @@ For programmatic configuration, use these parameter names:
 
 | Version     | Date       | Pull Request                                             | Subject                                                                                                                                                                |
 |:------------|:-----------|:---------------------------------------------------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| 4.0.8-rc.3 | 2026-05-21 | [78343](https://github.com/airbytehq/airbyte/pull/78343) | Revert default concurrency to 5, add configurable worker count, and enforce Notion API budget |
+| 4.0.8-rc.3 | 2026-05-22 | [78343](https://github.com/airbytehq/airbyte/pull/78343) | Revert default concurrency to 5, add configurable worker count, and enforce Notion API budget |
 | 4.0.8-rc.2 | 2026-05-19 | [78274](https://github.com/airbytehq/airbyte/pull/78274) | Increase `default_concurrency` to 6 for concurrency tuning iteration 2 |
 | 4.0.8-rc.1 | 2026-05-18 | [78149](https://github.com/airbytehq/airbyte/pull/78149) | Start concurrency tuning rollout |
 | 4.0.7 | 2026-04-28 | [77340](https://github.com/airbytehq/airbyte/pull/77340) | Update dependencies |
